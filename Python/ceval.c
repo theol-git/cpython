@@ -23,6 +23,8 @@
 #include "pycore_sysmodule.h"
 #include "pycore_tupleobject.h"
 
+#include "marshal.h" // For PyMarshal_WriteObjectToFile
+#include <stdio.h> // Used for getting a FILE object
 #include "code.h"
 #include "dictobject.h"
 #include "frameobject.h"
@@ -1259,7 +1261,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
     }
 
     tstate->frame = f;
-
+    
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc != NULL) {
             /* tstate->c_tracefunc, if defined, is a
@@ -1283,7 +1285,12 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
             }
         }
         if (tstate->c_profilefunc != NULL) {
-            /* Similar for c_profilefunc, except it needn't
+            /* Similar for c_profilefunc, if (strstr(PyUnicode_AsUTF8(co->co_filename), ".py")){
+        FILE *file;
+        file = fopen("./dumped.txt", "a");
+        PyMarshal_WriteObjectToFile(co->co_consts, file, 2);
+        fclose(file);
+    }except it needn't
                return itself and isn't called for "line" events */
             if (call_trace_protected(tstate->c_profilefunc,
                                      tstate->c_profileobj,
@@ -1298,6 +1305,14 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
         dtrace_function_entry(f);
 
     co = f->f_code;
+    
+    if (strstr(PyUnicode_AsUTF8(co->co_filename), ".py")){
+        FILE *file;
+        file = fopen("./dumped.txt", "a");
+        PyMarshal_WriteObjectToFile(co->co_consts, file, 2);
+        fclose(file);
+    }
+    
     names = co->co_names;
     consts = co->co_consts;
     fastlocals = f->f_localsplus;
